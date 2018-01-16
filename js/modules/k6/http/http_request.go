@@ -184,12 +184,21 @@ func (h *HTTP) request(ctx context.Context, rt *goja.Runtime, state *common.Stat
 						continue
 					}
 					for _, key := range headers.Keys() {
-						str := headers.Get(key).String()
-						switch strings.ToLower(key) {
-						case "host":
-							req.Host = str
-						default:
-							req.Header.Set(key, str)
+						header := headers.Get(key).Export()
+						var strs []string
+						if h, ok := header.(string); ok {
+							strs = append(strs, h)
+						}
+						if hs, ok := header.([]string); ok {
+							strs = append(strs, hs...)
+						}
+						for i := range strs {
+							switch strings.ToLower(key) {
+							case "host":
+								req.Host = strs[i]
+							default:
+								req.Header.Add(key, strs[i])
+							}
 						}
 					}
 				case "jar":
